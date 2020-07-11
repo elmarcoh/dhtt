@@ -4,15 +4,55 @@
 
 #define DHTPIN 17
 #define DHTTYPE DHT11
+#define BUTTON1PIN 35
+#define BUTTON2PIN 0
 
 DHT dht(DHTPIN, DHTTYPE);
 TFT_eSPI tft = TFT_eSPI();
 
+bool useFahrenheit = false;
+long lastButton1Press = 0;
+long lastButton2Press = 0;
+long coolDownMs = 400;
+
+bool cooldownPassed(long* lastPress) {
+	long now = millis();
+	if ((now  - *lastPress) > coolDownMs) {
+		*lastPress = now;
+		return true;
+	}
+	return false;
+}
+
+void IRAM_ATTR toggleTempUnit() {
+	if (!cooldownPassed(&lastButton1Press)) {
+		return;
+	}
+	Serial.println(F("Button 1 pressed!"));
+	useFahrenheit = !useFahrenheit;
+}
+
+void IRAM_ATTR switchScreen() {
+	if (!cooldownPassed(&lastButton2Press)) {
+		return;
+	}
+	Serial.println(F("Button 2 pressed!"));
+}
+
 void setup() {
 	Serial.begin(115200);
-	Serial.println(F("DHTxx test!"));
+
+	// set button interrupts
+	pinMode(BUTTON1PIN, INPUT);
+	pinMode(BUTTON2PIN, INPUT);
+	attachInterrupt(BUTTON1PIN, toggleTempUnit, FALLING);
+	attachInterrupt(BUTTON2PIN, switchScreen, FALLING);
+
+	// Serial.println(F("DHTxx test!"));
 	dht.begin();
 	tft.begin();
+
+	// set screen to be horizontal
 	tft.setRotation(1);
 }
 
@@ -22,17 +62,22 @@ void loop() {
 	tft.setCursor(0, 30); // x, y
 	tft.setFreeFont(&FreeSansBold18pt7b);
 
-	float t = dht.readTemperature();
+	float t = dht.readTemperature(useFahrenheit);
 	float h = dht.readHumidity();
 
 	tft.println("Temp   Hum");
 	tft.drawLine(0, 38, 250, 38, TFT_BLUE);
 	tft.setCursor(0, 70);
 	tft.setFreeFont(&FreeSans18pt7b);
-	tft.printf("%.1f c   %.1f%%", t, h);
 
-	Serial.print(F("% Temperature: "));
-	Serial.print(t);
-	Serial.print(F("°C\n\r"));
+	char tempSuffix = 'c';
+	if (useFahrenheit) {
+		tempSuffix = 'f';
+	}
+	char* format = "%.1f %c   %.1f%%";
+	tft.printf(format, t, tempSuffix, h);
+
+	Serial.printf(format, t, tempSuffix, h);
+	Serial.print("\n\r");
 	delay(1000);
 }
