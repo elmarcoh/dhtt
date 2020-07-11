@@ -11,6 +11,7 @@ DHT dht(DHTPIN, DHTTYPE);
 TFT_eSPI tft = TFT_eSPI();
 
 bool useFahrenheit = false;
+bool showTemp = true;
 long lastButton1Press = 0;
 long lastButton2Press = 0;
 long coolDownMs = 400;
@@ -37,6 +38,7 @@ void IRAM_ATTR switchScreen() {
 		return;
 	}
 	Serial.println(F("Button 2 pressed!"));
+	showTemp = !showTemp;
 }
 
 void setup() {
@@ -56,7 +58,7 @@ void setup() {
 	tft.setRotation(1);
 }
 
-void loop() {
+void tempScreen() {
 	tft.fillScreen(TFT_BLACK);
 	tft.setTextColor(TFT_WHITE, TFT_BLACK);
 	tft.setCursor(0, 30); // x, y
@@ -79,5 +81,17 @@ void loop() {
 
 	Serial.printf(format, t, tempSuffix, h);
 	Serial.print("\n\r");
+}
+
+void otherScreen() {
+	tft.fillScreen(TFT_BLUE);
+}
+
+void loop() {
+	if (showTemp) {
+		tempScreen();
+	} else {
+		otherScreen();
+	}
 	delay(1000);
 }
