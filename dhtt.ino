@@ -19,15 +19,20 @@ void setup() {
 void loop() {
 	tft.fillScreen(TFT_BLACK);
 	tft.setTextColor(TFT_WHITE, TFT_BLACK);
-	tft.setCursor(0, 60); // x, y
+	tft.setCursor(0, 30); // x, y
 	tft.setFreeFont(&FreeSansBold18pt7b);
-	tft.print("Hello World");
 
 	float t = dht.readTemperature();
-	float h = dht.readHumidity()
+	float h = dht.readHumidity();
+
+	tft.println("Temp   Hum");
+	tft.drawLine(0, 38, 250, 38, TFT_BLUE);
+	tft.setCursor(0, 70);
+	tft.setFreeFont(&FreeSans18pt7b);
+	tft.printf("%.1f c   %.1f%%", t, h);
 
 	Serial.print(F("% Temperature: "));
 	Serial.print(t);
 	Serial.print(F("°C\n\r"));
-	delay(2000);
+	delay(1000);
 }
